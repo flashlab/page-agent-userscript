@@ -1,0 +1,27 @@
+{
+  "name": "page-agent-userscript",
+  "version": "0.3.0",
+  "description": "在任意网页手动启动 page-agent 的油猴脚本，支持自定义 model/baseURL/apiKey/language",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:flashlab/page-agent-userscript.git"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "dev": "node scripts/build.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "page-agent": "latest"
+  },
+  "devDependencies": {
+    "@types/tampermonkey": "^5.0.5",
+    "esbuild": "^0.28.2",
+    "jsdom": "^30.0.1",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
+  },
+  "type": "module"
+}
