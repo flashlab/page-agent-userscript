@@ -34,7 +34,7 @@ describe('settings 存储', () => {
 			baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
 			apiKey: 'sk-test',
 			language: 'zh-CN' as const,
-			bypassCors: false,
+			requestMode: 'direct' as const,
 		}
 		saveSettings(s)
 		expect(loadSettings()).toEqual(s)
@@ -45,7 +45,14 @@ describe('settings 存储', () => {
 		const s = loadSettings()
 		expect(s.model).toBe('gpt-5.4-mini')
 		expect(s.language).toBe('auto')
-		expect(s.bypassCors).toBe(false)
+		expect(s.requestMode).toBe('auto')
+	})
+
+	it('旧字段迁移：bypassCors=true → requestMode=proxy，false → auto', () => {
+		store.set('pa_settings', JSON.stringify({ model: 'm', baseURL: 'https://x/v1', bypassCors: true }))
+		expect(loadSettings().requestMode).toBe('proxy')
+		store.set('pa_settings', JSON.stringify({ model: 'm', baseURL: 'https://x/v1', bypassCors: false }))
+		expect(loadSettings().requestMode).toBe('auto')
 	})
 })
 
@@ -73,14 +80,14 @@ describe('端点列表', () => {
 		baseURL: 'https://api.openai.com/v1',
 		apiKey: 'sk-1',
 		language: 'en-US' as const,
-		bypassCors: false,
+		requestMode: 'direct' as const,
 	}
 	const ep2 = {
 		model: 'qwen3.5-plus',
 		baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
 		apiKey: 'sk-2',
 		language: 'auto' as const,
-		bypassCors: true,
+		requestMode: 'proxy' as const,
 	}
 
 	it('空存储 → 空列表', () => {

@@ -83,13 +83,14 @@ describe('设置面板 · 基础', () => {
 				baseURL: 'https://api.openai.com/v1',
 				apiKey: 'sk-x',
 				language: 'en-US',
-				bypassCors: true,
+				requestMode: 'proxy',
 			}),
 		)
 		const { root } = openSettingsPanel()
 		expect(root.querySelector<HTMLInputElement>('#model')!.value).toBe('gpt-5.4-nano')
 		expect(root.querySelector<HTMLInputElement>('#baseURL')!.value).toBe('https://api.openai.com/v1')
 		expect(root.querySelector<HTMLSelectElement>('#language')!.value).toBe('en-US')
+		expect(root.querySelector<HTMLSelectElement>('#requestMode')!.value).toBe('proxy')
 	})
 
 	it('重复打开是单例（先关旧面板）', () => {
@@ -148,7 +149,7 @@ describe('设置面板 · 应用与端点列表', () => {
 			baseURL: 'https://llm.example.com:8443/v1',
 			apiKey: 'sk-cpa',
 			language: 'en-US',
-			bypassCors: true,
+			requestMode: 'proxy',
 		}]))
 		const { root, $ } = openAndFill()
 		;(root.querySelector('#dropdownToggle') as HTMLButtonElement).click()
@@ -161,14 +162,14 @@ describe('设置面板 · 应用与端点列表', () => {
 		expect($('baseURL').value).toBe('https://llm.example.com:8443/v1')
 		expect($('apiKey').value).toBe('sk-cpa')
 		expect($('language').value).toBe('en-US')
-		expect((root.querySelector('#bypassCors') as HTMLInputElement).checked).toBe(true)
+		expect($('requestMode').value).toBe('proxy')
 		expect(root.querySelector('#status')!.textContent).toContain('已加载')
 	})
 
 	it('每行有删除按钮，点击删除对应项', () => {
 		store.set('pa_endpoints', JSON.stringify([
-			{ model: 'm1', baseURL: 'https://a.com/v1', apiKey: '', language: 'auto', bypassCors: false },
-			{ model: 'm2', baseURL: 'https://b.com/v1', apiKey: '', language: 'auto', bypassCors: false },
+			{ model: 'm1', baseURL: 'https://a.com/v1', apiKey: '', language: 'auto', requestMode: 'auto' },
+			{ model: 'm2', baseURL: 'https://b.com/v1', apiKey: '', language: 'auto', requestMode: 'auto' },
 		]))
 		const { root } = openAndFill()
 		;(root.querySelector('#dropdownToggle') as HTMLButtonElement).click()
@@ -187,7 +188,7 @@ describe('设置面板 · 应用与端点列表', () => {
 
 	it('删光后端点下拉隐藏', () => {
 		store.set('pa_endpoints', JSON.stringify([
-			{ model: 'm1', baseURL: 'https://a.com/v1', apiKey: '', language: 'auto', bypassCors: false },
+			{ model: 'm1', baseURL: 'https://a.com/v1', apiKey: '', language: 'auto', requestMode: 'auto' },
 		]))
 		const { root } = openAndFill()
 		;(root.querySelector('#dropdownToggle') as HTMLButtonElement).click()
@@ -205,7 +206,7 @@ describe('设置面板 · 重置与关闭', () => {
 		expect($('baseURL').value).toBe('')
 		expect($('apiKey').value).toBe('')
 		expect($('language').value).toBe('auto')
-		expect((root.querySelector('#bypassCors') as HTMLInputElement).checked).toBe(false)
+		expect($('requestMode').value).toBe('auto')
 		expect(store.has('pa_settings')).toBe(false)
 	})
 

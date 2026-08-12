@@ -169,9 +169,15 @@ export function openSettingsPanel(options: OpenPanelOptions = {}): SettingsPanel
           </select>
         </label>
 
-        <div class="row">
-          <input id="bypassCors" type="checkbox">
-          <label for="bypassCors">经油猴代理 LLM 请求（端点不支持 CORS、或端点是 http:// 而页面是 https 时需要；开启后响应变非流式）</label>
+        <div class="row" style="display:block">
+          <label>LLM 请求方式
+            <select id="requestMode">
+              <option value="auto">自动：直连优先，失败时经油猴代理（默认，推荐）</option>
+              <option value="direct">强制直连（保留流式输出）</option>
+              <option value="proxy">强制经油猴代理（万能，但响应非流式）</option>
+            </select>
+            <div class="hint">CORS 受限、http 端点、GitHub 等 CSP 严格站点会拦截直连，自动模式可无缝回退</div>
+          </label>
         </div>
 
         <div class="buttons">
@@ -212,14 +218,14 @@ export function openSettingsPanel(options: OpenPanelOptions = {}): SettingsPanel
 		$<HTMLInputElement>('baseURL').value = s.baseURL
 		$<HTMLInputElement>('apiKey').value = s.apiKey
 		$<HTMLSelectElement>('language').value = s.language
-		$<HTMLInputElement>('bypassCors').checked = s.bypassCors
+		$<HTMLSelectElement>('requestMode').value = s.requestMode
 	}
 	const readForm = (): Settings => ({
 		model: $<HTMLInputElement>('model').value.trim(),
 		baseURL: $<HTMLInputElement>('baseURL').value.trim(),
 		apiKey: $<HTMLInputElement>('apiKey').value,
 		language: $<HTMLSelectElement>('language').value as LanguageSetting,
-		bypassCors: $<HTMLInputElement>('bypassCors').checked,
+		requestMode: $<HTMLSelectElement>('requestMode').value as Settings['requestMode'],
 	})
 	fillForm(settings)
 

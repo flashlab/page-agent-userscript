@@ -1,6 +1,6 @@
 import { PageAgent, PageAgentConfig } from 'page-agent'
 
-import { gmFetch } from './gm-fetch'
+import { gmFetch, smartFetch } from './gm-fetch'
 import { isConfigured, loadSettings } from './settings'
 import { openSettingsPanel } from './settings-panel'
 
@@ -28,7 +28,8 @@ export function launchPageAgent(): void {
 	}
 	if (settings.apiKey) config.apiKey = settings.apiKey
 	if (settings.language !== 'auto') config.language = settings.language
-	if (settings.bypassCors) config.customFetch = gmFetch
+	if (settings.requestMode === 'proxy') config.customFetch = gmFetch
+	else if (settings.requestMode === 'auto') config.customFetch = smartFetch
 
 	const agent = new PageAgent(config)
 	window.pageAgent = agent

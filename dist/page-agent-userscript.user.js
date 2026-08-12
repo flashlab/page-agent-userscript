@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Page-Agent Userscript
 // @namespace    https://github.com/flashlab/page-agent-userscript
-// @version      0.3.0
+// @version      0.4.0
 // @description  在任意网页手动启动 page-agent：油猴封装，支持自定义 model/baseURL/apiKey/language
 // @author       flashlab
 // @match        *://*/*
@@ -10199,6 +10199,14 @@ ${pi.pixels_above > 4 && viewportExpansion !== -1 ? `... ${pi.pixels_above} pixe
       });
     });
   }
+  async function smartFetch(input, init) {
+    try {
+      return await fetch(input, init);
+    } catch (err) {
+      console.warn("[page-agent-userscript] \u76F4\u8FDE\u5931\u8D25\uFF0C\u56DE\u9000\u6CB9\u7334\u4EE3\u7406:", err?.message);
+      return gmFetch(input, init);
+    }
+  }
 
   // src/settings.ts
   var DEFAULT_SETTINGS = {
@@ -10206,11 +10214,7 @@ ${pi.pixels_above > 4 && viewportExpansion !== -1 ? `... ${pi.pixels_above} pixe
     baseURL: "",
     apiKey: "",
     language: "auto",
-    /**
-     * 主流云端端点（OpenAI / 百炼 / DeepSeek / Gemini）已实测原生支持 CORS，
-     * 默认直连以保留流式输出；遇到不支持 CORS 的端点再打开此开关。
-     */
-    bypassCors: false
+    requestMode: "auto"
   };
   var STORAGE_KEY = "pa_settings";
   function loadSettings() {
@@ -10219,7 +10223,12 @@ ${pi.pixels_above > 4 && viewportExpansion !== -1 ? `... ${pi.pixels_above} pixe
       if (raw == null) return { ...DEFAULT_SETTINGS };
       const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
       if (typeof parsed !== "object") return { ...DEFAULT_SETTINGS };
-      return { ...DEFAULT_SETTINGS, ...parsed };
+      const merged = { ...DEFAULT_SETTINGS, ...parsed };
+      if (!("requestMode" in parsed)) {
+        const legacy = parsed.bypassCors;
+        merged.requestMode = legacy === true ? "proxy" : "auto";
+      }
+      return merged;
     } catch {
       return { ...DEFAULT_SETTINGS };
     }
@@ -10268,7 +10277,7 @@ ${pi.pixels_above > 4 && viewportExpansion !== -1 ? `... ${pi.pixels_above} pixe
 
   // src/constants.ts
   var PAGE_AGENT_VERSION = true ? "1.12.2" : "0.0.0-dev";
-  var USERSCRIPT_VERSION = true ? "0.3.0" : "0.0.0-dev";
+  var USERSCRIPT_VERSION = true ? "0.4.0" : "0.0.0-dev";
   var UPDATE_URL = true ? "https://raw.githubusercontent.com/flashlab/page-agent-userscript/main/dist/page-agent-userscript.user.js" : "https://raw.githubusercontent.com/flashlab/page-agent-userscript/main/dist/page-agent-userscript.user.js";
 
   // src/presets.ts
@@ -10462,9 +10471,15 @@ button { font-size: 14px; cursor: pointer; border-radius: 8px; }
           </select>
         </label>
 
-        <div class="row">
-          <input id="bypassCors" type="checkbox">
-          <label for="bypassCors">\u7ECF\u6CB9\u7334\u4EE3\u7406 LLM \u8BF7\u6C42\uFF08\u7AEF\u70B9\u4E0D\u652F\u6301 CORS\u3001\u6216\u7AEF\u70B9\u662F http:// \u800C\u9875\u9762\u662F https \u65F6\u9700\u8981\uFF1B\u5F00\u542F\u540E\u54CD\u5E94\u53D8\u975E\u6D41\u5F0F\uFF09</label>
+        <div class="row" style="display:block">
+          <label>LLM \u8BF7\u6C42\u65B9\u5F0F
+            <select id="requestMode">
+              <option value="auto">\u81EA\u52A8\uFF1A\u76F4\u8FDE\u4F18\u5148\uFF0C\u5931\u8D25\u65F6\u7ECF\u6CB9\u7334\u4EE3\u7406\uFF08\u9ED8\u8BA4\uFF0C\u63A8\u8350\uFF09</option>
+              <option value="direct">\u5F3A\u5236\u76F4\u8FDE\uFF08\u4FDD\u7559\u6D41\u5F0F\u8F93\u51FA\uFF09</option>
+              <option value="proxy">\u5F3A\u5236\u7ECF\u6CB9\u7334\u4EE3\u7406\uFF08\u4E07\u80FD\uFF0C\u4F46\u54CD\u5E94\u975E\u6D41\u5F0F\uFF09</option>
+            </select>
+            <div class="hint">CORS \u53D7\u9650\u3001http \u7AEF\u70B9\u3001GitHub \u7B49 CSP \u4E25\u683C\u7AD9\u70B9\u4F1A\u62E6\u622A\u76F4\u8FDE\uFF0C\u81EA\u52A8\u6A21\u5F0F\u53EF\u65E0\u7F1D\u56DE\u9000</div>
+          </label>
         </div>
 
         <div class="buttons">
@@ -10499,14 +10514,14 @@ button { font-size: 14px; cursor: pointer; border-radius: 8px; }
       $("baseURL").value = s.baseURL;
       $("apiKey").value = s.apiKey;
       $("language").value = s.language;
-      $("bypassCors").checked = s.bypassCors;
+      $("requestMode").value = s.requestMode;
     };
     const readForm = () => ({
       model: $("model").value.trim(),
       baseURL: $("baseURL").value.trim(),
       apiKey: $("apiKey").value,
       language: $("language").value,
-      bypassCors: $("bypassCors").checked
+      requestMode: $("requestMode").value
     });
     fillForm(settings);
     if (options.notice) {
@@ -10632,7 +10647,8 @@ button { font-size: 14px; cursor: pointer; border-radius: 8px; }
     };
     if (settings.apiKey) config2.apiKey = settings.apiKey;
     if (settings.language !== "auto") config2.language = settings.language;
-    if (settings.bypassCors) config2.customFetch = gmFetch;
+    if (settings.requestMode === "proxy") config2.customFetch = gmFetch;
+    else if (settings.requestMode === "auto") config2.customFetch = smartFetch;
     const agent = new PageAgent(config2);
     window.pageAgent = agent;
     agent.panel.show();

@@ -1,12 +1,19 @@
 export type LanguageSetting = 'auto' | 'zh-CN' | 'en-US'
 
+/**
+ * LLM 请求方式：
+ * - auto:   页面 fetch 直连优先，失败（CORS / 混合内容 / 页面 CSP connect-src）自动回退 GM 代理
+ * - direct: 强制直连（保留流式输出，但受限站点会失败）
+ * - proxy:  强制经 GM_xmlhttpRequest 代理（万能但非流式）
+ */
+export type RequestMode = 'auto' | 'direct' | 'proxy'
+
 export interface Settings {
 	model: string
 	baseURL: string
 	apiKey: string
 	language: LanguageSetting
-	/** 经 GM_xmlhttpRequest 代理 LLM 请求，绕过页面 CORS 限制 */
-	bypassCors: boolean
+	requestMode: RequestMode
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -14,11 +21,7 @@ export const DEFAULT_SETTINGS: Settings = {
 	baseURL: '',
 	apiKey: '',
 	language: 'auto',
-	/**
-	 * 主流云端端点（OpenAI / 百炼 / DeepSeek / Gemini）已实测原生支持 CORS，
-	 * 默认直连以保留流式输出；遇到不支持 CORS 的端点再打开此开关。
-	 */
-	bypassCors: false,
+	requestMode: 'auto',
 }
 
 const STORAGE_KEY = 'pa_settings'
@@ -30,7 +33,13 @@ export function loadSettings(): Settings {
 		if (raw == null) return { ...DEFAULT_SETTINGS }
 		const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw
 		if (typeof parsed !== 'object') return { ...DEFAULT_SETTINGS }
-		return { ...DEFAULT_SETTINGS, ...(parsed as Partial<Settings>) }
+		const merged = { ...DEFAULT_SETTINGS, ...(parsed as Partial<Settings>) }
+		// 旧字段迁移：bypassCors(boolean) → requestMode
+		if (!('requestMode' in (parsed as object))) {
+			const legacy = (parsed as Record<string, unknown>).bypassCors
+			merged.requestMode = legacy === true ? 'proxy' : 'auto'
+		}
+		return merged
 	} catch {
 		return { ...DEFAULT_SETTINGS }
 	}

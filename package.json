@@ -1,6 +1,6 @@
 {
   "name": "page-agent-userscript",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "在任意网页手动启动 page-agent 的油猴脚本，支持自定义 model/baseURL/apiKey/language",
   "license": "MIT",
   "repository": {

@@ -13,7 +13,7 @@
   - **apiKey**：本地 LLM 或免费测试端点可留空
   - **language**：跟随浏览器（默认）/ 简体中文 / English
 - 📌 端点列表：点「应用」即按 [model+baseURL] upsert 整套配置；下拉菜单以 `模型 - [api host]` 展示，点击加载、悬停删除；「重置」还原表单默认值
-- 🌐 可选"经油猴代理 LLM 请求"（默认关闭）：主流云端端点已原生支持 CORS，直连保留流式输出；当端点不支持 CORS、或端点是 `http://` 而页面是 `https://`（浏览器混合内容拦截，报 `Network request failed`）时打开，代价是响应变非流式
+- 🌐 LLM 请求方式三模式（默认**自动**）：直连优先、失败（CORS / http 混合内容 / GitHub 类站点 CSP `connect-src` 拦截）自动回退油猴代理；可选强制直连（保留流式）或强制代理（万能但非流式）
 - 🔄 打开设置面板自动检查上游库版本
 - 🤖 GitHub Actions 每周监控 npm 上游版本，发新版后自动重新构建并提交，Tampermonkey 用户经 `@updateURL` 自动更新
 

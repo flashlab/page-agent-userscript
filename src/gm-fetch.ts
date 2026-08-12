@@ -52,3 +52,16 @@ export function gmFetch(input: RequestInfo | URL, init?: RequestInit): Promise<R
 		})
 	})
 }
+
+/**
+ * 自动模式：直连优先；直连抛错（CORS / 混合内容 / 页面 CSP connect-src 拦截）时回退 GM 代理。
+ * 注意只对"请求根本没发出去"的异常回退；HTTP 4xx/5xx 是正常响应，不回退。
+ */
+export async function smartFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+	try {
+		return await fetch(input, init)
+	} catch (err) {
+		console.warn('[page-agent-userscript] 直连失败，回退油猴代理:', (err as Error)?.message)
+		return gmFetch(input, init)
+	}
+}
